@@ -1,0 +1,29 @@
+.opengraphica-text-editor {
+    cursor: text;
+    border: 1px solid #ccc;
+    box-sizing: border-box;
+    display: block;
+    padding: 0.25rem 0.5rem;
+    position: relative;
+}
+
+.opengraphica-text-editor:focus,
+.opengraphica-text-editor.focused {
+    outline: 0px solid transparent;
+    box-shadow: 0 0 0 2px #1C79C4;
+}
+
+.opengraphica-text-editor canvas {
+    display: block;
+    height: 10rem;
+    width: 100%;
+}
+
+.opengraphica-text-editor textarea {
+    display: block;
+    opacity: 0.001;
+    position: absolute;
+    overflow: hidden;
+    height: 0px;
+    width: 0px;
+}

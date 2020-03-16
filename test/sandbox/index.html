@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <link rel="stylesheet" type="text/css" href="../../src/text-editor.css">
+        <title>Editor Demo</title>
+    </head>
+    <body>
+        <script type="module">
+            import OpenGraphicaTextEditor from '../../src/text-editor.js';
+            const editor = new OpenGraphicaTextEditor({
+                value:
+                    '[b][i]test[/i][/b] [style fill-color=#00000000 stroke-width=".4px" stroke-color=#ff0000ff size="40px"]Foo[/style] [b]Bar[i] yeah[/i][/b]bat.[b]\n' + 
+                    '[style size="50px"]A[style kerning="10px"]VBC[/style][/style][/b]'
+            });
+            document.body.appendChild(editor.domElement);
+            editor.init();
+        </script>
+    </body>
+</html>

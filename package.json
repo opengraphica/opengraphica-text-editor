@@ -1,0 +1,15 @@
+{
+    "name": "opengraphica-text-editor",
+    "version": "0.1.0-alpha.1",
+    "license": "MIT",
+    "main": "dist/opengraphica-text-editor.commonjs.js",
+    "scripts": {
+        "build": "webpack --mode=production",
+        "prepublishOnly": "npm run build"
+    },
+    "devDependencies": {
+        "copy-webpack-plugin": "^5.1.1",
+        "webpack": "^4.42.0",
+        "webpack-cli": "^3.3.11"
+    }
+}
