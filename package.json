@@ -1,8 +1,12 @@
 {
     "name": "opengraphica-text-editor",
-    "version": "0.1.0-alpha.1",
+    "version": "0.1.0-alpha.2",
     "license": "MIT",
-    "main": "dist/opengraphica-text-editor.commonjs.js",
+    "main": "dist/opengraphica-text-editor.common.js",
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/opengraphica/opengraphica-text-editor.git"
+    },
     "scripts": {
         "build": "webpack --mode=production",
         "prepublishOnly": "npm run build"

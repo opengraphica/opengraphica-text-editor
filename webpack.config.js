@@ -15,7 +15,7 @@ module.exports = [
         entry: path.join(__dirname, '/src/text-editor.js'),
         output: {
             libraryTarget: 'commonjs',
-            filename: 'opengraphica-text-editor.commonjs.js',
+            filename: 'opengraphica-text-editor.common.js',
             path: path.resolve(__dirname, 'dist')
         },
         plugins: [

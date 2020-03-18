@@ -2,7 +2,7 @@
 
 This is the rich text editor used in the OpenGraphica graphic design program. It has been separated into its own repository because it may be useful for applications outside of OpenGraphica.
 
-This text editor uses the HTML5 Canvas to render text for easy integration with graphics-centered programs. The rich text source defined in a similar syntax to [BBCode](https://en.wikipedia.org/wiki/BBCode), however there are slight modifications due to text rendering being more complex than HTML:
+This text editor uses the HTML5 Canvas to render text for easy integration with graphics-centered programs. The rich text source is defined in a similar syntax to [BBCode](https://en.wikipedia.org/wiki/BBCode), however there are slight modifications due to text rendering being more complex than HTML:
 
 | Syntax | Description |
 |:-------|:------------|
@@ -19,9 +19,121 @@ This text editor uses the HTML5 Canvas to render text for easy integration with 
 | [style fill-color="linear-gradient(0deg, #FF00FFFF 10%, #00FF00FF 80%)"]purple to green gradient fill[/style] | text fill color with linear gradient |
 | [style stroke-color=#FF00FFFF]purple text stroke[/style] | text stroke color with RGBA hex code |
 | [style stroke-width="1px"]stroke width[/style] | specifies width of text stroke |
-| [style shadow="0px 0px 10px 0px #00000000 outset"]text shadow[/style] | shadow on text with props in order: h-offset, v-offset, blur, spread, color, inset/outset |
+| [style shadow="0px 0px 10px 0px #000000FF outset"]text shadow[/style] | shadow on text with props in order: h-offset, v-offset, blur, spread, color, inset/outset |
 | [style kerning="1px"]text kerning[/style] | kerning between letters |
 | [style baseline="5px"]text baseline[/style] | additional space at baseline of letters |
+
+## ALPHA RELEASE
+
+This software is still in alpha state. Features are actively being developed.
+
+- [ ] Text rendering
+    - [x] Bolded
+    - [x] Italicized
+    - [ ] Underlined
+    - [ ] Strikethrough
+    - [ ] Left align
+    - [ ] Right align
+    - [ ] Center align
+    - [ ] Justify align
+    - [ ] Vertical alignment options (for entire document)
+        - [x] Baseline (default)
+        - [ ] Meanline
+        - [ ] Top
+        - [ ] Bottom
+        - [ ] Middle
+    - [x] Font name
+    - [x] Font size
+    - [ ] Fill color
+        - [x] Solid
+        - [ ] Linear gradient
+        - [ ] Radial gradient
+    - [ ] Stroke color
+        - [x] Solid
+        - [ ] Linear gradient
+        - [ ] Radial gradient
+    - [x] Stroke width
+    - [ ] Shadow
+    - [ ] Kerning
+        - [ ] Interpret from font
+        - [x] Custom offsets
+    - [ ] Baseline offset
+- [x] Text selection
+    - [x] Expand selection
+        - [x] Left
+        - [x] Right
+        - [x] Up
+        - [x] Down
+    - [x] Respect document bounds
+- [ ] Text navigation
+    - [ ] Arrow keys
+        - [x] Navigate one character at time
+        - [x] Shift - select
+        - [ ] Ctrl - navigation one word at time
+        - [ ] Scrolling
+    - [ ] Mouse/touch
+        - [ ] Mouse/touch down place cursor
+        - [ ] Mouse/touch move to expand selection
+        - [ ] Scrolling
+            - [ ] With click/touch
+            - [ ] With mouse wheel
+- [ ] Text insertion
+    - [x] Typing
+        - [x] Empty selection
+        - [x] Replace selection
+    - [x] Pasting (ctrl + v)
+    - [ ] Drag and drop
+- [ ] Text deletion
+    - [x] Backspace key
+        - [x] Empty selection - delete previous single character 
+        - [x] Delete selection
+    - [x] Delete key
+        - [x] Empty selection - delete next single character 
+        - [x] Delete selection
+    - [ ] Cut (ctrl + x)
+- [ ] Text buffer
+    - [ ] Copy (ctrl + c)
+- [ ] Text style toolbar
+    - [ ] Bolded
+    - [ ] Italicized
+    - [ ] Underlined
+    - [ ] Strikethrough
+    - [ ] Horizontal alignment
+    - [ ] Vertical alignment
+    - [ ] Font name
+        - [ ] Ability to specify available fonts
+        - [ ] Load from Google fonts?
+    - [ ] Font size
+    - [ ] Fill color
+        - [ ] Solid
+        - [ ] Linear gradient
+        - [ ] Radial gradient
+    - [ ] Stroke color
+        - [ ] Solid
+        - [ ] Linear gradient
+        - [ ] Radial gradient
+    - [ ] Stroke width
+    - [ ] Shadow
+    - [ ] Kerning
+    - [ ] Baseline offset
+- [ ] Programming API
+    - [ ] Constructor
+        - [x] Set value
+        - [x] Specify selection text/background colors
+        - [ ] Specify default styles
+    - [ ] Set value after initialization
+    - [ ] Get value
+        - [ ] As BBCode string
+        - [ ] As HTML string (as compatible as possible)
+    - [ ] Trigger events
+        - [ ] Touchstart/mousedown
+        - [ ] Touchmove/mousemove
+    - [ ] Emit events
+        - [ ] Input
+        - [ ] Change
+        - [ ] Focus
+        - [ ] Blur
+    - [ ] Rendering to separate, remote canvas
 
 ## Usage
 

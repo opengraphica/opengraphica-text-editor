@@ -182,7 +182,7 @@ class OpenGraphicaTextEditor {
                 let spanWidth = 0;
                 for (let k = 0; k < span.text.length; k++) {
                     let isLetterSelected = false;
-                    if (this.selection.isVisible) {
+                    if (!isSelectionEmpty && this.selection.isVisible) {
                         isLetterSelected = (
                             (
                                 this.selection.start.line === i &&
