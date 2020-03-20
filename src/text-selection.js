@@ -100,6 +100,9 @@ class TextSelection {
             this.start.character = this.end.character = character;
         }
 
+        // Update scroll position to jump to cursor
+        this.editor.scrollToCursor();
+
         // Reset cursor blink
         this.isBlinkVisible = true;
         if (this.isVisible) {
@@ -155,27 +158,40 @@ class TextSelection {
     }
 
     moveUp(length, keepSelection) {
-        length = length || 1;
+        length = length == null ? 1 : length;
         const position = this.getPosition();
         this.setPosition(position.line - length, null, keepSelection);
     }
 
     moveDown(length, keepSelection) {
-        length = length || 1;
+        length = length == null ? 1 : length;
         const position = this.getPosition();
         this.setPosition(position.line + length, null, keepSelection);
     }
 
     moveLeft(length, keepSelection) {
-        length = length || 1;
+        length = length == null ? 1 : length;
         const position = this.getPosition();
-        this.setPosition(position.line, position.character - length, keepSelection);
+        if (position.character - length < 0) {
+            if (position.line > 0) {
+                this.setPosition(position.line - 1, this.editor.document.getLineCharacterCount(position.line - 1), keepSelection);
+            }
+        } else {
+            this.setPosition(position.line, position.character - length, keepSelection);
+        }
     }
 
     moveRight(length, keepSelection) {
-        length = length || 1;
+        length = length == null ? 1 : length;
         const position = this.getPosition();
-        this.setPosition(position.line, position.character + length, keepSelection);
+        const characterCount = this.editor.document.getLineCharacterCount(position.line);
+        if (position.character + length > characterCount) {
+            if (position.line + 1 < this.editor.document.lines.length) {
+                this.setPosition(position.line + 1, 0, keepSelection);
+            }
+        } else {
+            this.setPosition(position.line, position.character + length, keepSelection);
+        }
     }
 
     moveLineStart(keepSelection) {

@@ -82,7 +82,11 @@ class TextDocument {
             this.lines[line] = [...previousSpans, modifiedSpans.shift()];
             for (let i = 0; i < modifiedSpans.length; i++) {
                 if (i === modifiedSpans.length - 1) {
-                    this.lines.splice(line + i + 1, 0, [modifiedSpans[i], ...nextSpans]);
+                    if (!modifiedSpans[i].text && nextSpans.length > 0) {
+                        this.lines.splice(line + i + 1, 0, nextSpans);
+                    } else {
+                        this.lines.splice(line + i + 1, 0, [modifiedSpans[i], ...nextSpans]);
+                    }
                     newLine = line + i + 1;
                     newCharacter = text.length - 1 - text.lastIndexOf('\n');
                 } else {

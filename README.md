@@ -28,6 +28,8 @@ This text editor uses the HTML5 Canvas to render text for easy integration with 
 This software is still in alpha state. Features are actively being developed.
 
 - [ ] Text rendering
+    - [x] LTR
+    - [ ] RTL
     - [x] Bolded
     - [x] Italicized
     - [ ] Underlined
@@ -58,6 +60,7 @@ This software is still in alpha state. Features are actively being developed.
         - [ ] Interpret from font
         - [x] Custom offsets
     - [ ] Baseline offset
+    - [ ] Text Wrapping
 - [x] Text selection
     - [x] Expand selection
         - [x] Left
@@ -65,12 +68,15 @@ This software is still in alpha state. Features are actively being developed.
         - [x] Up
         - [x] Down
     - [x] Respect document bounds
+    - [ ] Double click select word
+    - [ ] Select all (ctrl + a)
 - [ ] Text navigation
     - [ ] Arrow keys
         - [x] Navigate one character at time
         - [x] Shift - select
         - [ ] Ctrl - navigation one word at time
-        - [ ] Scrolling
+        - [x] Scrolling
+    - [x] Home/End keys - line start/end
     - [ ] Mouse/touch
         - [ ] Mouse/touch down place cursor
         - [ ] Mouse/touch move to expand selection
@@ -94,6 +100,7 @@ This software is still in alpha state. Features are actively being developed.
 - [ ] Text buffer
     - [ ] Copy (ctrl + c)
 - [ ] Text style toolbar
+    - [ ] API to control order/display
     - [ ] Bolded
     - [ ] Italicized
     - [ ] Underlined
@@ -116,24 +123,35 @@ This software is still in alpha state. Features are actively being developed.
     - [ ] Shadow
     - [ ] Kerning
     - [ ] Baseline offset
+- [ ] Color selection widget
+    [ ] API to substitute with custom widget
+- [ ] Gradient selection widget
+    [ ] API to substitute with custom widget
 - [ ] Programming API
     - [ ] Constructor
         - [x] Set value
         - [x] Specify selection text/background colors
         - [ ] Specify default styles
+        - [x] Padding
+        - [ ] Readonly
     - [ ] Set value after initialization
     - [ ] Get value
         - [ ] As BBCode string
         - [ ] As HTML string (as compatible as possible)
+    - [ ] Scrolling
     - [ ] Trigger events
         - [ ] Touchstart/mousedown
         - [ ] Touchmove/mousemove
+        - [ ] Wheel
     - [ ] Emit events
         - [ ] Input
         - [ ] Change
         - [ ] Focus
         - [ ] Blur
     - [ ] Rendering to separate, remote canvas
+- [ ] Accessibility
+    - [ ] Research necessary aria attributes
+    - [ ] Test with screen readers
 
 ## Usage
 
@@ -167,12 +185,51 @@ document.body.appendChild(editor.domElement);
 editor.init();
 ```
 
+If you want to move the editor to a different place in the DOM, move editor.domElement manually then call `init()` again.
+
+```
+document.body.appendChild(editor.domElement);
+editor.init();
+```
+
+When you're completely done with the editor, destroy it.
+
+```
+editor.destroy();
+```
+
 ### Configuration
 
 The `OpenGraphicaTextEditor` constructor accepts a configuration object, defined as follows:
 
 ```
 new OpenGraphicaTextEditor({
+
+    // Horizontal padding when the area is not read-only.
+    paddingHorizontal: 10,
+
+    // Vertical padding when the area is not read-only.
+    paddingVertical: 6,
+
+    // Removes all editing styling and toolbars and displays
+    // the text editor as if it were regular text on the document.
+    readonly: false,
+
+    // Size of the scrollbar in pixels
+    scrollbarSize: 12,
+
+    // Color of the scrollbar thumb (handle) (Hex code)
+    scrollbarThumbColor: '#787C7D',
+
+    // Amount of pixel spacing between the scrollbar thumb and track.
+    // A higher number means a smaller thumb.
+    scrollbarThumbPadding: 2,
+
+    // Style of the end of the scrollbar, 'round' or 'square'.
+    scrollbarThumbStyle: 'round',
+
+    // Color of the scrollbar track (background) (Hex code)
+    scrollbarTrackColor: '#C3C4C4',
 
     // Background color for text selection. (Hex code)
     selectionBackgroundColor: '#1C79C4',

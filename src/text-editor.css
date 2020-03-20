@@ -3,7 +3,7 @@
     border: 1px solid #ccc;
     box-sizing: border-box;
     display: block;
-    padding: 0.25rem 0.5rem;
+    padding: 0;
     position: relative;
 }
 
@@ -11,6 +11,11 @@
 .opengraphica-text-editor.focused {
     outline: 0px solid transparent;
     box-shadow: 0 0 0 2px #1C79C4;
+}
+
+.opengraphica-text-editor.readonly {
+    border: none;
+    box-shadow: none;
 }
 
 .opengraphica-text-editor canvas {
