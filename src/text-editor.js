@@ -31,12 +31,29 @@ class OpenGraphicaTextEditor {
         this.scrollHeight = 0;
         this.scrollWidthPadding = 4;
         this.scrollHeightPadding = 0;
+        this.scrollPixels = options.scrollPixels || 15;
+        this.scrollBoundSize = options.scrollBoundSize || 15;
 
         this.scrollbarTrackColor = options.scrollbarTrackColor || '#C3C4C4';
         this.scrollbarThumbColor = options.scrollbarThumbColor || '#787C7D';
+        this.scrollbarThumbColorHover = options.scrollbarThumbColorHover || '#535859';
+        this.scrollbarThumbColorActive = options.scrollbarThumbColorActive || '#1C79C4';
         this.scrollbarThumbPadding = options.scrollbarThumbPadding != null ? options.scrollbarThumbPadding : 2;
         this.scrollbarThumbStyle = options.scrollbarThumbStyle || 'round';
         this.scrollbarSize = options.scrollbarSize || 12;
+        this.isHorizontalScrollbarHover = false;
+        this.isVerticalScrollbarHover = false;
+        this.isHorizontalScrollbarActive = false;
+        this.isVerticalScrollbarActive = false;
+
+        this.horizontalScrollbarBoundLeft = 0;
+        this.horizontalScrollbarBoundRight = 0;
+        this.horizontalScrollbarThumbLeft = 0;
+        this.horizontalScrollbarThumbRight = 0;
+        this.verticalScrollbarBoundTop = 0;
+        this.verticalScrollbarBoundBottom = 0;
+        this.verticalScrollbarThumbTop = 0;
+        this.verticalScrollbarThumbBottom = 0;
 
         this.drawOffsetTop = options.paddingVertical != null ? options.paddingVertical : 6;
         this.drawOffsetLeft = options.paddingHorizontal != null ? options.paddingHorizontal : 10;
@@ -46,10 +63,19 @@ class OpenGraphicaTextEditor {
 
         this.shiftPressed = false;
         this.ctrlPressed = false;
+        this.isMouseSelectionActive = false;
+        this.mouseSelectionStartX = 0;
+        this.mouseSelectionStartY = 0;
+        this.mouseSelectionMoveX = null;
+        this.mouseSelectionMoveY = null;
+        this.mouseSelectionStartScrollLeft = 0;
+        this.mouseSelectionStartScrollTop = 0;
+        this.mouseSelectionEdgeScrollInterval = null;
+        this.focused = false;
         this.selectionBackgroundColor = options.selectionBackgroundColor || '#1C79C4';
         this.selectionTextColor = options.selectionTextColor || '#FFFFFF';
         this.metaDefaults = {
-            size: 12,
+            size: 16,
             font: 'Arial, sans-serif',
             kerning: 0,
             fillColor: {
@@ -64,15 +90,48 @@ class OpenGraphicaTextEditor {
         };
 
         this.selection = new TextSelection(this);
+        this.value = options.value;
 
         this.domElement.addEventListener('focus', this.onFocusRoot.bind(this), false);
         this.textareaElement.addEventListener('focus', this.onFocus.bind(this), false);
         this.textareaElement.addEventListener('blur', this.onBlur.bind(this), false);
         this.textareaElement.addEventListener('input', this.onInput.bind(this), false);
         this.textareaElement.addEventListener('keydown', this.onKeydown.bind(this), false);
-        document.addEventListener('keydown', this.addKeyModifier.bind(this), true);
-        document.addEventListener('keyup', this.removeKeyModfier.bind(this), true);
+        this.canvasElement.addEventListener('mousedown', this.onMouseDown.bind(this), false);
+        this.canvasElement.addEventListener('mouseleave', this.onMouseLeave.bind(this), false);
+        this.canvasElement.addEventListener('touchstart', this.onTouchStart.bind(this), false);
+        this.canvasElement.addEventListener('touchmove', this.onTouchMove.bind(this), false);
+        this.canvasElement.addEventListener('wheel', this.onWheel.bind(this), false);
+
+        this.globalEventListeners = {
+            onMouseUp: (e) => this.onMouseUp(e),
+            onMouseMove: (e) => this.onMouseMove(e),
+            onTouchEnd: (e) => this.onTouchEnd(e),
+            addKeyModifier: (e) => this.addKeyModifier(e),
+            removeKeyModfier: (e) => this.removeKeyModfier(e)
+        };
+        window.addEventListener('mouseup', this.globalEventListeners.onMouseUp, true);
+        window.addEventListener('mousemove', this.globalEventListeners.onMouseMove, true);
+        window.addEventListener('touchend', this.globalEventListeners.onTouchEnd, true);
+        document.addEventListener('keydown', this.globalEventListeners.addKeyModifier, true);
+        document.addEventListener('keyup', this.globalEventListeners.removeKeyModfier, true);
     }
+
+    /*--------*\
+    | Computed |
+    \*--------*/
+
+    get value() {
+        return this.document.stringifyToCode();
+    }
+
+    set value(value) {
+        this.document.parseFromCode(value || '');
+    }
+
+    /*---------*\
+    | Lifecycle |
+    \*---------*/
 
     init() {
         requestAnimationFrame(() => {
@@ -101,8 +160,8 @@ class OpenGraphicaTextEditor {
     }
 
     destroy() {
-        if (this.domElement.parent) {
-            this.domElement.parent.removeChild(this.domElement);
+        if (this.domElement.parentNode) {
+            this.domElement.parentNode.removeChild(this.domElement);
         }
         this.domElement = null;
         if (ResizeObserver) {
@@ -110,14 +169,21 @@ class OpenGraphicaTextEditor {
         } else {
             removeEventListener(this.resizeCallback);
         }
-        document.removeEventListener('keydown', this.addKeyModifier.bind(this));
-        document.removeEventListener('keyup', this.removeKeyModfier.bind(this));
+        document.removeEventListener('keydown', this.globalEventListeners.addKeyModifier);
+        document.removeEventListener('keyup', this.globalEventListeners.removeKeyModfier);
+        window.removeEventListener('mouseup', this.globalEventListeners.onMouseUp);
+        window.removeEventListener('mousemove', this.globalEventListeners.onMouseMove);
+        window.removeEventListener('touchend', this.globalEventListeners.onTouchEnd);
         this.lineSizeMap.clear();
         this.lineSizeMap = null;
         this.lineCharacterOffsetMap.clear();
         this.lineCharacterOffsetMap = null;
         this.selection = null;
     }
+
+    /*---------------*\
+    | Utility Methods |
+    \*---------------*/
 
     scrollToCursor() {
         if (this.selection) {
@@ -368,7 +434,7 @@ class OpenGraphicaTextEditor {
             ctx.fillStyle = this.scrollbarTrackColor;
             ctx.fillRect(0, this.canvasElement.height - this.scrollbarSize, this.canvasElement.width, this.scrollbarSize);
             ctx.lineCap = this.scrollbarThumbStyle;
-            ctx.strokeStyle = this.scrollbarThumbColor;
+            ctx.strokeStyle = this.isHorizontalScrollbarActive ? this.scrollbarThumbColorActive : (this.isHorizontalScrollbarHover ? this.scrollbarThumbColorHover : this.scrollbarThumbColor);
             ctx.lineWidth = this.scrollbarSize - (this.scrollbarThumbPadding * 2);
             ctx.beginPath();
             const scrollbarThumbTop = this.canvasElement.height - (this.scrollbarSize / 2) + 0.5;
@@ -380,8 +446,12 @@ class OpenGraphicaTextEditor {
             const scrollTrackWidth = scrollbarThumbRightBound - scrollbarThumbLeftBound;
             const scrollThumbWidth = this.canvasElement.width / scrollWidth * scrollTrackWidth;
             const scrollTrackLeft = Math.min(this.scrollLeft, scrollWidth - this.canvasElement.width) / scrollWidth * scrollTrackWidth;
-            ctx.moveTo(scrollbarThumbLeftBound + scrollTrackLeft, scrollbarThumbTop);
-            ctx.lineTo(scrollbarThumbLeftBound + scrollTrackLeft + scrollThumbWidth, scrollbarThumbTop);
+            this.horizontalScrollbarBoundLeft = scrollbarThumbLeftBound;
+            this.horizontalScrollbarBoundRight = scrollbarThumbRightBound;
+            this.horizontalScrollbarThumbLeft = scrollbarThumbLeftBound + scrollTrackLeft;
+            this.horizontalScrollbarThumbRight = this.horizontalScrollbarThumbLeft + scrollThumbWidth;
+            ctx.moveTo(this.horizontalScrollbarThumbLeft, scrollbarThumbTop);
+            ctx.lineTo(this.horizontalScrollbarThumbRight, scrollbarThumbTop);
             ctx.stroke();
         }
 
@@ -390,7 +460,7 @@ class OpenGraphicaTextEditor {
             ctx.fillStyle = this.scrollbarTrackColor;
             ctx.fillRect(this.canvasElement.width - this.scrollbarSize, 0, this.canvasElement.width, this.canvasElement.height);
             ctx.lineCap = this.scrollbarThumbStyle;
-            ctx.strokeStyle = this.scrollbarThumbColor;
+            ctx.strokeStyle = this.isVerticalScrollbarActive ? this.scrollbarThumbColorActive : (this.isVerticalScrollbarHover ? this.scrollbarThumbColorHover : this.scrollbarThumbColor);
             ctx.lineWidth = this.scrollbarSize - (this.scrollbarThumbPadding * 2);
             ctx.beginPath();
             const scrollbarThumbLeft = this.canvasElement.width - (this.scrollbarSize / 2) + 0.5;
@@ -402,8 +472,12 @@ class OpenGraphicaTextEditor {
             const scrollTrackHeight = scrollbarThumbBottomBound - scrollbarThumbTopBound;
             const scrollThumbHeight = this.canvasElement.height / scrollHeight * scrollTrackHeight;
             const scrollTrackTop = Math.min(this.scrollTop, scrollHeight - this.canvasElement.height) / scrollHeight * scrollTrackHeight;
-            ctx.moveTo(scrollbarThumbLeft, scrollbarThumbTopBound + scrollTrackTop);
-            ctx.lineTo(scrollbarThumbLeft, scrollbarThumbTopBound + scrollTrackTop + scrollThumbHeight);
+            this.verticalScrollbarBoundTop = scrollbarThumbTopBound;
+            this.verticalScrollbarBoundBottom = scrollbarThumbBottomBound;
+            this.verticalScrollbarThumbTop = scrollbarThumbTopBound + scrollTrackTop;
+            this.verticalScrollbarThumbBottom = this.verticalScrollbarThumbTop + scrollThumbHeight;
+            ctx.moveTo(scrollbarThumbLeft, this.verticalScrollbarThumbTop);
+            ctx.lineTo(scrollbarThumbLeft, this.verticalScrollbarThumbBottom);
             ctx.stroke();
         }
         this.scrollWidth = scrollWidth;
@@ -437,6 +511,218 @@ class OpenGraphicaTextEditor {
         this.draw();
     }
 
+    applyScrollBounds(scrollLeft, scrollTop) {
+        if (scrollLeft < 0) {
+            scrollLeft = 0;
+        }
+        if (scrollLeft > this.scrollWidth - this.canvasElement.width) {
+            scrollLeft = Math.max(0, this.scrollWidth - this.canvasElement.width);
+        }
+        if (scrollTop < 0) {
+            scrollTop = 0;
+        }
+        if (scrollTop > this.scrollHeight - this.canvasElement.height) {
+            scrollTop = Math.max(0, this.scrollHeight - this.canvasElement.height);
+        }
+        return { scrollLeft, scrollTop };
+    }
+
+    getCursorPositionFromAbsolutePosition(x, y) {
+        let line = -1;
+        let character = -1;
+        let lineCount = this.document.lines.length;
+        for (const [lineNumber, linePosition] of this.lineSizeMap.entries()) {
+            if (lineNumber >= lineCount) {
+                break;
+            }
+            if (y < linePosition.offsetTop + linePosition.height) {
+                line = lineNumber;
+                break;
+            }
+        }
+        if (line === -1) {
+            line = lineCount - 1;
+        }
+        const characterOffsets = this.lineCharacterOffsetMap.get(line);
+        for (let characterNumber = 0; characterNumber < characterOffsets.length - 1; characterNumber++) {
+            const leftPosition = characterOffsets[characterNumber];
+            const rightPosition = characterOffsets[characterNumber + 1];
+            if (x < leftPosition + (rightPosition - leftPosition) / 2) {
+                character = characterNumber;
+                break;
+            }
+        }
+        if (character === -1) {
+            character = this.document.getLineCharacterCount(line);
+        }
+        return { line, character };
+    }
+
+    /*--------------*\
+    | Event Triggers |
+    \*--------------*/
+
+    triggerCursorStart(canvasX, canvasY) {
+        this.isMouseSelectionActive = true;
+        this.mouseSelectionStartX = canvasX;
+        this.mouseSelectionStartY = canvasY;
+        const hasHorizontalScrollbar = this.scrollWidth > this.canvasElement.width;
+        const hasVerticalScrollbar = this.scrollHeight > this.canvasElement.height;
+        const isHorizontalScrollbarActive = hasHorizontalScrollbar && canvasY > this.canvasElement.height - this.scrollbarSize;
+        const isVerticalScrollbarActive = hasVerticalScrollbar && canvasX > this.canvasElement.width - this.scrollbarSize;
+        if (isHorizontalScrollbarActive || isVerticalScrollbarActive) {
+            const halfScrollbarSize = this.scrollbarSize / 2;
+            const paddingOffset = halfScrollbarSize - (this.scrollbarThumbPadding / halfScrollbarSize) * 2; // TODO - formula not accurate
+            if (isHorizontalScrollbarActive && !isVerticalScrollbarActive) {
+                this.isHorizontalScrollbarActive = true;
+                if (canvasX < this.horizontalScrollbarThumbLeft || canvasX > this.horizontalScrollbarThumbRight) {
+                    const thumbWidth = this.horizontalScrollbarThumbRight - this.horizontalScrollbarThumbLeft;
+                    this.scrollLeft = this.applyScrollBounds((
+                        (canvasX - (thumbWidth / 2) - paddingOffset) * (this.scrollWidth / (this.horizontalScrollbarBoundRight - this.horizontalScrollbarBoundLeft))
+                    ), 0).scrollLeft;
+                }
+                this.draw();
+            }
+            if (isVerticalScrollbarActive && !isHorizontalScrollbarActive) {
+                this.isVerticalScrollbarActive = true;
+                if (canvasY < this.verticalScrollbarThumbTop || canvasY > this.verticalScrollbarThumbBottom) {
+                    const thumbHeight = this.verticalScrollbarThumbBottom - this.verticalScrollbarThumbTop;
+                    this.scrollTop = this.applyScrollBounds(0, (
+                        (canvasY - (thumbHeight / 2) - paddingOffset) * (this.scrollHeight / (this.verticalScrollbarBoundBottom - this.verticalScrollbarBoundTop))
+                    )).scrollTop;
+                }
+                this.draw();
+            }
+        } else {
+            const cursorStart = this.getCursorPositionFromAbsolutePosition(canvasX + this.scrollLeft, canvasY + this.scrollTop);
+            this.selection.setPosition(cursorStart.line, cursorStart.character, false);
+
+            // Scroll automatically when mouse is on the edge of the editor.
+            clearInterval(this.mouseSelectionEdgeScrollInterval);
+            this.mouseSelectionEdgeScrollInterval = setInterval(() => {
+                if (this.mouseSelectionMoveX != null && this.mouseSelectionMoveY != null) {
+                    const hasHorizontalScrollbar = this.scrollWidth > this.canvasElement.width;
+                    const hasVerticalScrollbar = this.scrollHeight > this.canvasElement.height;
+                    let horizontalScroll = 0;
+                    let verticalScroll = 0;
+                    if (this.mouseSelectionMoveX < this.scrollBoundSize) {
+                        horizontalScroll = -1 * this.scrollPixels;
+                    }
+                    else if (this.mouseSelectionMoveX > this.canvasElement.width - this.scrollBoundSize - (hasHorizontalScrollbar ? this.scrollbarSize : 0)) {
+                        horizontalScroll = 1 * this.scrollPixels;
+                    }
+                    if (this.mouseSelectionMoveY < this.scrollBoundSize) {
+                        verticalScroll = -1 * this.scrollPixels;
+                    }
+                    else if (this.mouseSelectionMoveY > this.canvasElement.height - this.scrollBoundSize - (hasVerticalScrollbar ? this.scrollbarSize : 0)) {
+                        verticalScroll = 1 * this.scrollPixels;
+                    }
+                    if (verticalScroll || horizontalScroll) {
+                        const scrollBounds = this.applyScrollBounds(this.scrollLeft + horizontalScroll, this.scrollTop + verticalScroll);
+                        this.scrollLeft = scrollBounds.scrollLeft;
+                        this.scrollTop = scrollBounds.scrollTop;
+                        const cursorEnd = this.getCursorPositionFromAbsolutePosition(
+                            this.mouseSelectionMoveX + this.scrollLeft, 
+                            this.mouseSelectionMoveY + this.scrollTop
+                        );
+                        this.selection.setPosition(cursorEnd.line, cursorEnd.character, true);
+                    }
+                }
+            }, 100);
+        }
+        this.mouseSelectionStartScrollLeft = this.scrollLeft;
+        this.mouseSelectionStartScrollTop = this.scrollTop;
+    }
+
+    triggerCursorMove(canvasX, canvasY) {
+        const isInsideCanvas = canvasX > 0 && canvasY > 0 && canvasX < this.canvasElement.width && canvasY < this.canvasElement.height;
+        if (isInsideCanvas) {
+            const hasHorizontalScrollbar = this.scrollWidth > this.canvasElement.width;
+            const hasVerticalScrollbar = this.scrollHeight > this.canvasElement.height;
+            const isHorizontalScrollbarHover = hasHorizontalScrollbar && canvasY > this.canvasElement.height - this.scrollbarSize;
+            const isVerticalScrollbarHover = hasVerticalScrollbar && canvasX > this.canvasElement.width - this.scrollbarSize;
+            this.isHorizontalScrollbarHover = isHorizontalScrollbarHover && !isVerticalScrollbarHover;
+            this.isVerticalScrollbarHover = isVerticalScrollbarHover && !isHorizontalScrollbarHover;
+            if (this.isHorizontalScrollbarHover || this.isHorizontalScrollbarActive) {
+                if (!this.canvasElement.classList.contains('ogte-scrollbar-horizontal-hover')) {
+                    this.draw();
+                    this.canvasElement.classList.add('ogte-scrollbar-horizontal-hover');
+                }
+            } else {
+                if (this.canvasElement.classList.contains('ogte-scrollbar-horizontal-hover')) {
+                    this.draw();
+                    this.canvasElement.classList.remove('ogte-scrollbar-horizontal-hover');
+                }
+            }
+            if (this.isVerticalScrollbarHover || this.isVerticalScrollbarActive) {
+                if (!this.canvasElement.classList.contains('ogte-scrollbar-vertical-hover')) {
+                    this.draw();
+                    this.canvasElement.classList.add('ogte-scrollbar-vertical-hover');
+                }
+            } else {
+                if (this.canvasElement.classList.contains('ogte-scrollbar-vertical-hover')) {
+                    this.draw();
+                    this.canvasElement.classList.remove('ogte-scrollbar-vertical-hover');
+                }
+            }
+        }
+        if (this.isMouseSelectionActive) {
+            if (this.isHorizontalScrollbarActive || this.isVerticalScrollbarActive) {
+                if (this.isHorizontalScrollbarActive) {
+                    const sizeRatio = this.scrollWidth / (this.horizontalScrollbarBoundRight - this.horizontalScrollbarBoundLeft);
+                    this.scrollLeft = this.applyScrollBounds(this.mouseSelectionStartScrollLeft + (canvasX - this.mouseSelectionStartX) * sizeRatio, 0).scrollLeft;
+                    this.draw();
+                }
+                else if (this.isVerticalScrollbarActive) {
+                    const sizeRatio = this.scrollHeight / (this.verticalScrollbarBoundBottom - this.verticalScrollbarBoundTop);
+                    this.scrollTop = this.applyScrollBounds(0, this.mouseSelectionStartScrollTop + (canvasY - this.mouseSelectionStartY) * sizeRatio).scrollTop;
+                    this.draw();
+                }
+            } else if (isInsideCanvas) {
+                this.mouseSelectionMoveX = canvasX;
+                this.mouseSelectionMoveY = canvasY;
+                const cursorEnd = this.getCursorPositionFromAbsolutePosition(
+                    this.mouseSelectionMoveX + this.scrollLeft, 
+                    this.mouseSelectionMoveY + this.scrollTop
+                );
+                this.selection.setPosition(cursorEnd.line, cursorEnd.character, true);
+            }
+        }
+    }
+
+    triggerCursorEnd() {
+        clearInterval(this.mouseSelectionEdgeScrollInterval);
+        this.isMouseSelectionActive = false;
+        this.mouseSelectionMoveX = null;
+        this.mouseSelectionMoveY = null;
+        if (this.isHorizontalScrollbarActive || this.isVerticalScrollbarActive) {
+            this.isHorizontalScrollbarActive = false;
+            this.isVerticalScrollbarActive = false;
+            this.draw();
+        }
+    }
+
+    triggerCursorLeave() {
+        this.isHorizontalScrollbarHover = false;
+        this.isVerticalScrollbarHover = false;
+        this.draw();
+        this.canvasElement.classList.remove('ogte-scrollbar-horizontal-hover');
+        this.canvasElement.classList.remove('ogte-scrollbar-vertical-hover');
+    }
+
+    triggerScroll(offsetX, offsetY) {
+        if (offsetX || offsetY) {
+            let bounds = this.applyScrollBounds(this.scrollLeft + (offsetX || 0), this.scrollTop + (offsetY || 0));
+            this.scrollLeft = bounds.scrollLeft;
+            this.scrollTop = bounds.scrollTop;
+            this.draw();
+        }
+    }
+
+    /*---------------*\
+    | Event Listeners |
+    \*---------------*/
+
     addKeyModifier(e) {
         if (e.keyCode === 16) {
             this.shiftPressed = true;
@@ -455,18 +741,20 @@ class OpenGraphicaTextEditor {
         }
     }
 
+    onBlur(e) {
+        this.focused = false;
+        this.domElement.classList.remove('ogte-focused');
+        this.selection.setVisible(false);
+    }
+
     onFocusRoot(e) {
         this.textareaElement.focus();
     }
 
     onFocus(e) {
-        this.domElement.classList.add('focused');
+        this.focused = true;
+        this.domElement.classList.add('ogte-focused');
         this.selection.setVisible(true);
-    }
-
-    onBlur(e) {
-        this.domElement.classList.remove('focused');
-        this.selection.setVisible(false);
     }
 
     onInput(e) {
@@ -515,6 +803,47 @@ class OpenGraphicaTextEditor {
                 handled = false;
         }
         return !handled;
+    }
+
+    onMouseDown(e) {
+        const canvasBounds = this.canvasElement.getBoundingClientRect();
+        this.triggerCursorStart(e.clientX - canvasBounds.left, e.clientY - canvasBounds.top);
+    }
+
+    onMouseLeave(e) {
+        this.triggerCursorLeave();
+    }
+
+    onMouseMove(e) {
+        const canvasBounds = this.canvasElement.getBoundingClientRect();
+        this.triggerCursorMove(e.clientX - canvasBounds.left, e.clientY - canvasBounds.top);
+    }
+
+    onMouseUp(e) {
+        this.triggerCursorEnd();
+    }
+
+    onTouchEnd(e) {
+        if (e.touches.length === 0) {
+            this.triggerCursorEnd();
+        }
+    }
+
+    onTouchMove(e) {
+        if (e.touches.length > 0) {
+            const canvasBounds = this.canvasElement.getBoundingClientRect();
+            this.triggerCursorMove(e.touches[0].clientX - canvasBounds.left, e.touches[0].clientY - canvasBounds.top);
+        }
+    }
+
+    onTouchStart(e) {
+        const canvasBounds = this.canvasElement.getBoundingClientRect();
+        this.triggerCursorStart(e.touches[0].clientX - canvasBounds.left, e.touches[0].clientY - canvasBounds.top);
+    }
+
+    onWheel(e) {
+        e.stopPropagation();
+        this.triggerScroll(e.deltaX * this.scrollPixels, e.deltaY * this.scrollPixels);
     }
 
 }

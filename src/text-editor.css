@@ -1,34 +1,42 @@
 .opengraphica-text-editor {
-    cursor: text;
     border: 1px solid #ccc;
     box-sizing: border-box;
     display: block;
     padding: 0;
     position: relative;
+    overflow: hidden;
 }
 
 .opengraphica-text-editor:focus,
-.opengraphica-text-editor.focused {
+.opengraphica-text-editor.ogte-focused {
     outline: 0px solid transparent;
     box-shadow: 0 0 0 2px #1C79C4;
 }
 
-.opengraphica-text-editor.readonly {
+.opengraphica-text-editor.ogte-readonly {
     border: none;
     box-shadow: none;
 }
 
 .opengraphica-text-editor canvas {
+    cursor: text;
     display: block;
     height: 10rem;
     width: 100%;
 }
 
+.opengraphica-text-editor canvas.ogte-scrollbar-horizontal-hover,
+.opengraphica-text-editor canvas.ogte-scrollbar-vertical-hover {
+    cursor: default;
+}
+
 .opengraphica-text-editor textarea {
     display: block;
-    opacity: 0.001;
-    position: absolute;
-    overflow: hidden;
     height: 0px;
+    left: 0;
+    opacity: 0.001;
+    overflow: hidden;
+    position: absolute;
+    top: 0;
     width: 0px;
 }

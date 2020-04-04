@@ -447,6 +447,14 @@ class TextDocument {
         }
     }
 
+    stringifyToCode() {
+        return '';
+    }
+
+    stringifyToHtml() {
+        return '';
+    }
+
     getLineCount() {
         return this.lines.length;
     }

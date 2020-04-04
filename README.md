@@ -2,7 +2,9 @@
 
 This is the rich text editor used in the OpenGraphica graphic design program. It has been separated into its own repository because it may be useful for applications outside of OpenGraphica.
 
-This text editor uses the HTML5 Canvas to render text for easy integration with graphics-centered programs. The rich text source is defined in a similar syntax to [BBCode](https://en.wikipedia.org/wiki/BBCode), however there are slight modifications due to text rendering being more complex than HTML:
+This text editor uses the HTML5 Canvas to render text for easy integration with graphics-centered programs. This library is **NOT** designed to be used in a content management application, as it has no support for linking, image insertion, and other basic web features.
+
+The rich text source is defined in a similar syntax to [BBCode](https://en.wikipedia.org/wiki/BBCode), however there are slight modifications due to text rendering being more complex than HTML:
 
 | Syntax | Description |
 |:-------|:------------|
@@ -61,6 +63,7 @@ This software is still in alpha state. Features are actively being developed.
         - [x] Custom offsets
     - [ ] Baseline offset
     - [ ] Text Wrapping
+        - [ ] Indent/Wrap based on custom shape
 - [x] Text selection
     - [x] Expand selection
         - [x] Left
@@ -69,6 +72,7 @@ This software is still in alpha state. Features are actively being developed.
         - [x] Down
     - [x] Respect document bounds
     - [ ] Double click select word
+    - [ ] Triple click select line
     - [ ] Select all (ctrl + a)
 - [ ] Text navigation
     - [ ] Arrow keys
@@ -78,11 +82,12 @@ This software is still in alpha state. Features are actively being developed.
         - [x] Scrolling
     - [x] Home/End keys - line start/end
     - [ ] Mouse/touch
-        - [ ] Mouse/touch down place cursor
-        - [ ] Mouse/touch move to expand selection
+        - [x] Mouse/touch down place cursor
+        - [x] Mouse/touch move to expand selection
         - [ ] Scrolling
-            - [ ] With click/touch
-            - [ ] With mouse wheel
+            - [ ] While expanding selection
+            - [ ] With click/touch of scroll bar
+            - [x] With mouse wheel
 - [ ] Text insertion
     - [x] Typing
         - [x] Empty selection
@@ -124,9 +129,9 @@ This software is still in alpha state. Features are actively being developed.
     - [ ] Kerning
     - [ ] Baseline offset
 - [ ] Color selection widget
-    [ ] API to substitute with custom widget
+    - [ ] API to substitute with custom widget
 - [ ] Gradient selection widget
-    [ ] API to substitute with custom widget
+    - [ ] API to substitute with custom widget
 - [ ] Programming API
     - [ ] Constructor
         - [x] Set value
@@ -149,9 +154,17 @@ This software is still in alpha state. Features are actively being developed.
         - [ ] Focus
         - [ ] Blur
     - [ ] Rendering to separate, remote canvas
+    - [ ] Enable/disable resize control
+    - [ ] Enable/disable auto resize
 - [ ] Accessibility
     - [ ] Research necessary aria attributes
     - [ ] Test with screen readers
+- [ ] Resize Controls
+    - [ ] Height resizing
+    - [ ] Width resizing
+- [ ] History
+    - [ ] Undo (Ctrl + Z)
+    - [ ] Redo (Ctrl + Y)
 
 ## Usage
 
@@ -205,36 +218,51 @@ The `OpenGraphicaTextEditor` constructor accepts a configuration object, defined
 ```
 new OpenGraphicaTextEditor({
 
-    // Horizontal padding when the area is not read-only.
+    // Horizontal padding when the editor is not read-only.
     paddingHorizontal: 10,
 
-    // Vertical padding when the area is not read-only.
+    // Vertical padding when the editor is not read-only.
     paddingVertical: 6,
 
     // Removes all editing styling and toolbars and displays
-    // the text editor as if it were regular text on the document.
+    // the text editor as if it were regular text in the document.
     readonly: false,
 
-    // Size of the scrollbar in pixels
+    // Size of the scrollbar in pixels.
     scrollbarSize: 12,
 
-    // Color of the scrollbar thumb (handle) (Hex code)
+    // Color of the scrollbar thumb/handle (Hex code).
     scrollbarThumbColor: '#787C7D',
 
-    // Amount of pixel spacing between the scrollbar thumb and track.
+    // Color of the scrollbar thumb/handle when the mouse cursor is hovering over it.
+    scrollbarThumbColorHover: '#535859',
+
+    // Color of the scrollbar thumb/handle when the mouse cursor is dragging it.
+    scrollbarThumbColorActive: '#1C79C4',
+
+    // Amount of pixel spacing between the scrollbar thumb and track
     // A higher number means a smaller thumb.
     scrollbarThumbPadding: 2,
 
-    // Style of the end of the scrollbar, 'round' or 'square'.
+    // Style of the ends of the scrollbar thumb/handle, 'round' or 'square'.
     scrollbarThumbStyle: 'round',
 
-    // Color of the scrollbar track (background) (Hex code)
+    // Color of the scrollbar track/background (Hex code).
     scrollbarTrackColor: '#C3C4C4',
 
-    // Background color for text selection. (Hex code)
+    // When selecting text with the mouse and dragging to the edge,
+    // this is how many pixels close to the edge the mouse needs to be
+    // in order to automatically scroll.
+    scrollBoundSize: 15
+
+    // How many pixels the editor will scroll per mouse wheel click.
+    // This number can vary across browser, operating system, and device.
+    scrollPixels: 16,
+
+    // Background color for text selection (Hex code).
     selectionBackgroundColor: '#1C79C4',
 
-    // Text color for text selection. (Hex code)
+    // Text color for text selection (Hex code).
     selectionTextColor: '#FFFFFF',
 
     // The initial text that shows inside the editor.
@@ -243,3 +271,25 @@ new OpenGraphicaTextEditor({
 
 });
 ```
+
+### API
+
+**editor.triggerCursorStart(canvasX, canvasY)**
+
+Trigger the start of a selection or cursor placement, at the specified x and y position of the editor canvas element.
+
+**editor.triggerCursorMove(canvasX, canvasY)**
+
+Triggers an update of the cursor movement (resulting in a selection), at the specified x and y position of the editor canvas element.
+
+**editor.triggerCursorEnd()**
+
+Trigger the end of a selection or cursor placement.
+
+**editor.triggerCursorLeave()**
+
+Trigger the mouse leaving the editable area.
+
+**editor.triggerScroll(offsetX, offsetY)**
+
+Triggers the editor to scroll by a specified number of pixels in the x and y direction.

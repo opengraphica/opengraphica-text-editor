@@ -8,7 +8,6 @@
         <script type="module">
             import OpenGraphicaTextEditor from '../../src/text-editor.js';
             const editor = new OpenGraphicaTextEditor({
-                scrollbarThumbPadding: 2,
                 scrollbarThumbStyle: 'round',
                 value:
                     '[b][i]test[/i][/b] [style fill-color=#00000000 stroke-width=".4px" stroke-color=#ff0000ff size="40px"]Foo[/style] [b]Bar[i] yeah[/i][/b]bat.[b]\n' + 
@@ -16,6 +15,7 @@
             });
             document.body.appendChild(editor.domElement);
             editor.init();
+            window.editor = editor;
         </script>
     </body>
 </html>
